@@ -16,6 +16,8 @@ namespace Racing
 		SpriteBatch spriteBatch;
 		bool Active;
 
+		SpriteFont font;
+
 		// Player Declaration
 		Player player;
 		float playerSpeed;
@@ -25,19 +27,23 @@ namespace Racing
 
 		//Background Declaration
 		Track bgLayer;
-		int bgSpeed;
+		float bgSpeed;
 
 
 
 		//Coins Declaration
 		List<Coin> coins;
-		float coinSpeed;
+		//float coinSpeed;
 		TimeSpan previousSpanTime;
 		TimeSpan spawnTime;
 		Random random;
 
 		//Obstacles Declaration
 		List<Coin> rocks;
+
+		//Score
+		SpriteFont scoreFont;
+		int score;
 
 		public Game1()
 		{
@@ -66,17 +72,18 @@ namespace Racing
 			bgLayer = new Track();
 			bgSpeed = 4;
 
-
-
 			//Coins Initialization
 			coins = new List<Coin>();
-			coinSpeed = 4f;
-			spawnTime = TimeSpan.FromSeconds(4.0f);
+			//coinSpeed = bgSpeed;
+			spawnTime = TimeSpan.FromSeconds(2.0f);
 			previousSpanTime = TimeSpan.Zero;
 			random = new Random();
 
 			//Obstacle Initialization
 			rocks = new List<Coin>();
+
+			//Score Initialization
+			score = 0;
 
 
 			base.Initialize();
@@ -91,6 +98,8 @@ namespace Racing
 			// Create a new SpriteBatch, which can be used to draw textures.
 			//TODO: use this.Content to load your game content here 
 			spriteBatch = new SpriteBatch(GraphicsDevice);
+			font = Content.Load<SpriteFont>("Texts/GameOver");
+			scoreFont = Content.Load<SpriteFont>("Texts/Score");
 
 			Vector2 playerPosition = new Vector2(GraphicsDevice.Viewport.TitleSafeArea.X, GraphicsDevice.Viewport.TitleSafeArea.Y + 
 			                       GraphicsDevice.Viewport.TitleSafeArea.Height / 2);
@@ -102,7 +111,6 @@ namespace Racing
 
 			//AddCoin();
 		}
-
 
 
 		/// <summary>
@@ -124,7 +132,9 @@ namespace Racing
 
 			currentKey = Keyboard.GetState();
 			PlayerUpdate(gameTime);
+			bgLayer.speed = bgSpeed;
 			bgLayer.Update(gameTime);
+
 
 			CoinsUpdate(gameTime);
 
@@ -166,7 +176,7 @@ namespace Racing
 			Vector2 coinPosition = new Vector2(GraphicsDevice.Viewport.Width + coinTexture.Width / 2,
 											   random.Next(0, GraphicsDevice.Viewport.Height - coinTexture.Height));
 
-			coin.Initialize(coinTexture, coinPosition, coinSpeed, isObstacle);
+			coin.Initialize(coinTexture, coinPosition, bgSpeed, isObstacle);
 			things.Add(coin);
 		}
 
@@ -175,8 +185,12 @@ namespace Racing
 			if (gameTime.TotalGameTime - previousSpanTime >= spawnTime)
 			{
 				previousSpanTime = gameTime.TotalGameTime;
+
 				AddCoin(rocks, true);
 				AddCoin(coins, false);
+
+				bgSpeed *= 1.1f;
+				playerSpeed *= 1.1f;
 			}
 
 			for (int i = 0; i < coins.Count; i++)
@@ -195,7 +209,6 @@ namespace Racing
 		protected void CollisionUpdate(GameTime gameTime)
 		{
 			CoinCollisionUpdate(gameTime);
-			//ObstacleCollisionUpdate(gameTime);
 		}
 
 		protected void CoinCollisionUpdate(GameTime gameTime)
@@ -205,16 +218,19 @@ namespace Racing
 
 			foreach (Coin coin in coins)
 			{
+				if (!coin.Active) continue;
 				Rectangle rect2 = new Rectangle((int)coin.position.X, (int)coin.position.Y,
 												coin.texture.Width, coin.texture.Height);
 
-				if (rect1.Intersects(rect2))
-
+				if (rect1.Intersects(rect2)) {
 					coin.Active = false;
+					score += 10;
+				}
 			}
 
 			foreach (Coin rock in rocks)
 			{
+				if (!rock.Active) continue;
 				Rectangle rect2 = new Rectangle((int)rock.position.X, (int)rock.position.Y,
 												rock.texture.Width, rock.texture.Height);
 
@@ -224,21 +240,7 @@ namespace Racing
 			}
 		}
 
-		protected void ObstacleCollisionUpdate(GameTime gameTime)
-		{
-			//Rectangle rect1 = new Rectangle((int)player.playerPosition.X, (int)player.playerPosition.Y,
-			//								player.playerTexture.Width, player.playerTexture.Height);
 
-			//foreach (Coin coin in coins)
-			//{
-			//	Rectangle rect2 = new Rectangle((int)coin.position.X, (int)coin.position.Y,
-			//									coin.texture.Width, coin.texture.Height);
-
-			//	if (rect1.Intersects(rect2))
-
-			//		coin.Active = false;
-			//}
-		}
 
 
 		/// <summary>
@@ -253,11 +255,12 @@ namespace Racing
 			spriteBatch.Begin();
 
 			bgLayer.Draw(spriteBatch);
+			spriteBatch.DrawString(scoreFont, "Score = " + score, new Vector2(50, 50), Color.White);
 			foreach (Coin rock in rocks) rock.Draw(spriteBatch);
 			foreach (Coin coin in coins) coin.Draw(spriteBatch);
-			//foreach (Coin rock in rocks) rock.Draw(spriteBatch);
-
 			player.Draw(spriteBatch);
+
+			if (!Active) spriteBatch.DrawString(font, "Final Score = " + score, new Vector2(150, 200), Color.Black);
 
 			spriteBatch.End();
 

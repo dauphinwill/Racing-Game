@@ -17,9 +17,9 @@ namespace Racing
 		Texture2D texture;
 		Vector2[] positions;
 
-		int speed;
+		public float speed;
 
-		public void Initialize(float screenWidth, float screenHeight, Texture2D texture, int speed)
+		public void Initialize(float screenWidth, float screenHeight, Texture2D texture, float speed)
 		{
 			this.texture = texture;
 			bgHeight = screenHeight;
