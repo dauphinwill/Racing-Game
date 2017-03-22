@@ -39,7 +39,7 @@ namespace Racing
 			{
 				positions[i].X -= speed;
 
-				if (positions[i].X <= -bgWidth) positions[i].X = (positions.Length - 1) * bgWidth;
+				if (positions[i].X <= -bgWidth) positions[i].X += (positions.Length) * bgWidth;
 			}
 		}
 

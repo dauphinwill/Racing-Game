@@ -14,6 +14,7 @@ namespace Racing
 	{
 		GraphicsDeviceManager graphics;
 		SpriteBatch spriteBatch;
+		bool Active;
 
 		// Player Declaration
 		Player player;
@@ -26,16 +27,23 @@ namespace Racing
 		Track bgLayer;
 		int bgSpeed;
 
+
+
 		//Coins Declaration
 		List<Coin> coins;
 		float coinSpeed;
 		TimeSpan previousSpanTime;
 		TimeSpan spawnTime;
+		Random random;
+
+		//Obstacles Declaration
+		List<Coin> rocks;
 
 		public Game1()
 		{
 			graphics = new GraphicsDeviceManager(this);
 			Content.RootDirectory = "Content";
+
 		}
 
 		/// <summary>
@@ -47,20 +55,28 @@ namespace Racing
 		protected override void Initialize()
 		{
 			// TODO: Add your initialization logic here
+			// Game Status
+			Active = true;
+
 			//Player Initialization
 			player = new Player();
-			playerSpeed = 8.0f;
+			playerSpeed = 6.0f;
 
 			//Background Initialization
 			bgLayer = new Track();
-			bgSpeed = 3;
+			bgSpeed = 4;
+
+
 
 			//Coins Initialization
 			coins = new List<Coin>();
-			coinSpeed = 3f;
-			spawnTime = TimeSpan.FromSeconds(2.0f);
+			coinSpeed = 4f;
+			spawnTime = TimeSpan.FromSeconds(4.0f);
 			previousSpanTime = TimeSpan.Zero;
+			random = new Random();
 
+			//Obstacle Initialization
+			rocks = new List<Coin>();
 
 
 			base.Initialize();
@@ -84,7 +100,7 @@ namespace Racing
 			bgLayer.Initialize(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, Content.Load<Texture2D>("Graphics/track"), bgSpeed);
 
 
-			AddCoin();
+			//AddCoin();
 		}
 
 
@@ -104,10 +120,15 @@ namespace Racing
 #endif
 
 			// TODO: Add your update logic here
+			if (!Active) return;
+
 			currentKey = Keyboard.GetState();
 			PlayerUpdate(gameTime);
 			bgLayer.Update(gameTime);
+
 			CoinsUpdate(gameTime);
+
+
 			CollisionUpdate(gameTime);
 
 			base.Update(gameTime);
@@ -131,18 +152,22 @@ namespace Racing
 			player.playerPosition.Y = MathHelper.Clamp(player.playerPosition.Y, 0, GraphicsDevice.Viewport.Height - player.playerTexture.Height);
 		}
 
-		protected void AddCoin()
+		protected void AddCoin(List<Coin> things, bool isObstacle)
 		{
 			Coin coin = new Coin();
 
 			Texture2D coinTexture = Content.Load<Texture2D>("Graphics/coin");
+			//if (!isObstacle) coinTexture = Content.Load<Texture2D>("Graphics/coin");
+			if (isObstacle)
+			{
+				coinTexture = Content.Load<Texture2D>("Graphics/rock");
+			}
 
-			Random random = new Random();
 			Vector2 coinPosition = new Vector2(GraphicsDevice.Viewport.Width + coinTexture.Width / 2,
-											   random.Next(coinTexture.Height, GraphicsDevice.Viewport.Height - coinTexture.Height));
+											   random.Next(0, GraphicsDevice.Viewport.Height - coinTexture.Height));
 
-			coin.Initialize(coinTexture, coinPosition, coinSpeed);
-			coins.Add(coin);
+			coin.Initialize(coinTexture, coinPosition, coinSpeed, isObstacle);
+			things.Add(coin);
 		}
 
 		protected void CoinsUpdate(GameTime gameTime)
@@ -150,8 +175,8 @@ namespace Racing
 			if (gameTime.TotalGameTime - previousSpanTime >= spawnTime)
 			{
 				previousSpanTime = gameTime.TotalGameTime;
-				AddCoin();
-
+				AddCoin(rocks, true);
+				AddCoin(coins, false);
 			}
 
 			for (int i = 0; i < coins.Count; i++)
@@ -159,9 +184,21 @@ namespace Racing
 				coins[i].Update(gameTime);
 				if (!coins[i].Active) coins.RemoveAt(i);
 			}
+
+			for (int i = 0; i < rocks.Count; i++)
+			{
+				rocks[i].Update(gameTime);
+				if (!rocks[i].Active) rocks.RemoveAt(i);
+			}
 		}
 
 		protected void CollisionUpdate(GameTime gameTime)
+		{
+			CoinCollisionUpdate(gameTime);
+			//ObstacleCollisionUpdate(gameTime);
+		}
+
+		protected void CoinCollisionUpdate(GameTime gameTime)
 		{
 			Rectangle rect1 = new Rectangle((int)player.playerPosition.X, (int)player.playerPosition.Y,
 											player.playerTexture.Width, player.playerTexture.Height);
@@ -172,12 +209,38 @@ namespace Racing
 												coin.texture.Width, coin.texture.Height);
 
 				if (rect1.Intersects(rect2))
-					
+
 					coin.Active = false;
+			}
+
+			foreach (Coin rock in rocks)
+			{
+				Rectangle rect2 = new Rectangle((int)rock.position.X, (int)rock.position.Y,
+												rock.texture.Width, rock.texture.Height);
+
+				if (rect1.Intersects(rect2))
+
+					this.Active = false;
 			}
 		}
 
-	
+		protected void ObstacleCollisionUpdate(GameTime gameTime)
+		{
+			//Rectangle rect1 = new Rectangle((int)player.playerPosition.X, (int)player.playerPosition.Y,
+			//								player.playerTexture.Width, player.playerTexture.Height);
+
+			//foreach (Coin coin in coins)
+			//{
+			//	Rectangle rect2 = new Rectangle((int)coin.position.X, (int)coin.position.Y,
+			//									coin.texture.Width, coin.texture.Height);
+
+			//	if (rect1.Intersects(rect2))
+
+			//		coin.Active = false;
+			//}
+		}
+
+
 		/// <summary>
 		/// This is called when the game should draw itself.
 		/// </summary>
@@ -190,7 +253,9 @@ namespace Racing
 			spriteBatch.Begin();
 
 			bgLayer.Draw(spriteBatch);
+			foreach (Coin rock in rocks) rock.Draw(spriteBatch);
 			foreach (Coin coin in coins) coin.Draw(spriteBatch);
+			//foreach (Coin rock in rocks) rock.Draw(spriteBatch);
 
 			player.Draw(spriteBatch);
 
