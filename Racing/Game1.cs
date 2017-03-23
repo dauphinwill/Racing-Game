@@ -70,7 +70,7 @@ namespace Racing
 
 			//Background Initialization
 			bgLayer = new Track();
-			bgSpeed = 4;
+			bgSpeed = 4.0f;
 
 			//Coins Initialization
 			coins = new List<Coin>();
@@ -109,7 +109,6 @@ namespace Racing
 			bgLayer.Initialize(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, Content.Load<Texture2D>("Graphics/track"), bgSpeed);
 
 
-			//AddCoin();
 		}
 
 
@@ -128,24 +127,41 @@ namespace Racing
 #endif
 
 			// TODO: Add your update logic here
+			currentKey = Keyboard.GetState();
+			keyUpdate(gameTime);
+
 			if (!Active) return;
 
-			currentKey = Keyboard.GetState();
 			PlayerUpdate(gameTime);
 			bgLayer.speed = bgSpeed;
 			bgLayer.Update(gameTime);
 
 
 			CoinsUpdate(gameTime);
-
-
 			CollisionUpdate(gameTime);
+
+
 
 			base.Update(gameTime);
 		}
 
+		protected void keyUpdate(GameTime gameTime)
+		{
+			if (currentKey.IsKeyDown(Keys.R))
+			{
+				//Active = true;
+				//rocks = new List<Coin>();
+				//coins = new List<Coin>();
+				//playerSpeed = 6.0f;
+				//bgSpeed = 4.0f;
+				//score = 0;
+				this.Initialize();
+			}
+		}
+
 		protected void PlayerUpdate(GameTime gameTime)
 		{
+			
 			if (currentKey.IsKeyDown(Keys.Right))
 				player.playerPosition.X += playerSpeed;
 
@@ -173,7 +189,7 @@ namespace Racing
 				coinTexture = Content.Load<Texture2D>("Graphics/rock");
 			}
 
-			Vector2 coinPosition = new Vector2(GraphicsDevice.Viewport.Width + coinTexture.Width / 2,
+			Vector2 coinPosition = new Vector2(GraphicsDevice.Viewport.Width + coinTexture.Width / 2 + random.Next(-100, 100),
 											   random.Next(0, GraphicsDevice.Viewport.Height - coinTexture.Height));
 
 			coin.Initialize(coinTexture, coinPosition, bgSpeed, isObstacle);
@@ -202,7 +218,11 @@ namespace Racing
 			for (int i = 0; i < rocks.Count; i++)
 			{
 				rocks[i].Update(gameTime);
-				if (!rocks[i].Active) rocks.RemoveAt(i);
+				if (!rocks[i].Active)
+				{
+					rocks.RemoveAt(i);
+					score += (int)(5 * bgSpeed / 4.0f);
+				}
 			}
 		}
 
@@ -224,7 +244,7 @@ namespace Racing
 
 				if (rect1.Intersects(rect2)) {
 					coin.Active = false;
-					score += 10;
+					score += (int)(20 * bgSpeed / 4.0f);
 				}
 			}
 
@@ -255,11 +275,12 @@ namespace Racing
 			spriteBatch.Begin();
 
 			bgLayer.Draw(spriteBatch);
-			spriteBatch.DrawString(scoreFont, "Score = " + score, new Vector2(50, 50), Color.White);
+
 			foreach (Coin rock in rocks) rock.Draw(spriteBatch);
 			foreach (Coin coin in coins) coin.Draw(spriteBatch);
 			player.Draw(spriteBatch);
 
+			spriteBatch.DrawString(scoreFont, "Score = " + score, new Vector2(50, 50), Color.White);
 			if (!Active) spriteBatch.DrawString(font, "Final Score = " + score, new Vector2(150, 200), Color.Black);
 
 			spriteBatch.End();
