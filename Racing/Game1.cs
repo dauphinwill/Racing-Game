@@ -34,6 +34,7 @@ namespace Racing
 		//Coins Declaration
 		List<Coin> coins;
 		//float coinSpeed;
+		float spawnTimeValue;
 		TimeSpan previousSpanTime;
 		TimeSpan spawnTime;
 		Random random;
@@ -75,7 +76,8 @@ namespace Racing
 			//Coins Initialization
 			coins = new List<Coin>();
 			//coinSpeed = bgSpeed;
-			spawnTime = TimeSpan.FromSeconds(2.0f);
+			spawnTimeValue = 2.0f;
+			spawnTime = TimeSpan.FromSeconds(spawnTimeValue);
 			previousSpanTime = TimeSpan.Zero;
 			random = new Random();
 
@@ -205,8 +207,21 @@ namespace Racing
 				AddCoin(rocks, true);
 				AddCoin(coins, false);
 
-				bgSpeed *= 1.1f;
-				playerSpeed *= 1.1f;
+				if (score < 1000)
+				{
+					bgSpeed *= 1.05f;
+					playerSpeed *= 1.05f;
+				}
+					
+				else
+				{
+					spawnTimeValue *= 0.98f;
+					spawnTime = TimeSpan.FromSeconds(spawnTimeValue);
+				}
+					
+				
+				
+				//playerSpeed *= 1.1f;
 			}
 
 			for (int i = 0; i < coins.Count; i++)
